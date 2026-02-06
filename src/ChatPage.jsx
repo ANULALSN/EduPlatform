@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { Send, Paperclip, ChevronLeft, Users, Radio } from "lucide-react";
+import { Send, Paperclip, ChevronLeft, Users, Radio, MessageCircle } from "lucide-react";
 import API_URL from "./config";
 
 const ChatPage = () => {
@@ -25,11 +25,11 @@ const ChatPage = () => {
         // For now, mocking the chat list
         if (user) fetchChats(user);
 
-        if (initialMentorId) {
+        if (initialMentorId && user) {
             // Fetch specific chat history
-            fetchHistory(user?._id, initialMentorId);
+            fetchHistory(user._id, initialMentorId);
         }
-    }, [initialMentorId]);
+    }, [initialMentorId, user]);
 
     const fetchChats = async (user) => {
         // Mock data for side bar
