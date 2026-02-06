@@ -23,7 +23,7 @@ const ChatPage = () => {
 
         // Fetch chat history or active chats list
         // For now, mocking the chat list
-        fetchChats(user?._id);
+        if (user) fetchChats(user);
 
         if (initialMentorId) {
             // Fetch specific chat history
@@ -31,13 +31,24 @@ const ChatPage = () => {
         }
     }, [initialMentorId]);
 
-    const fetchChats = async (userId) => {
+    const fetchChats = async (user) => {
         // Mock data for side bar
         // Ideally fetch from /api/chat/history/userId
-        setChats([
-            { id: "1", name: "Arjun K", lastMsg: "See you at 5!", time: "10:30 AM", avatar: null, role: "Mentor" },
-            { id: "2", name: "Sarah M", lastMsg: "Great progress!", time: "Yesterday", avatar: null, role: "Mentor" }
-        ]);
+
+        const isStudent = user?.role === "student";
+
+        if (isStudent) {
+            setChats([
+                { id: "1", name: "Arjun K", lastMsg: "See you at 5!", time: "10:30 AM", avatar: null, role: "Mentor" },
+                { id: "2", name: "Sarah M", lastMsg: "Great progress!", time: "Yesterday", avatar: null, role: "Mentor" }
+            ]);
+        } else {
+            // If User is Mentor, show Students
+            setChats([
+                { id: "101", name: "Rahul S", lastMsg: "I have a doubt in React", time: "10:05 AM", avatar: null, role: "Student" },
+                { id: "102", name: "Anjali P", lastMsg: "Assignment Submitted", time: "Yesterday", avatar: null, role: "Student" }
+            ]);
+        }
     };
 
     const fetchHistory = async (userId, otherId) => {
@@ -176,8 +187,10 @@ const ChatPage = () => {
                         {/* Chat Header */}
                         <div className="p-4 border-b border-white/5 bg-slate-800/20 backdrop-blur-md flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <h3 className="font-bold text-lg">Arjun K</h3>
-                                <span className="px-2 py-0.5 bg-fuchsia-500/20 text-fuchsia-400 text-xs rounded-full border border-fuchsia-500/20">Mentor</span>
+                                <h3 className="font-bold text-lg">{chats.find(c => c.id === activeChat)?.name || "User"}</h3>
+                                <span className="px-2 py-0.5 bg-fuchsia-500/20 text-fuchsia-400 text-xs rounded-full border border-fuchsia-500/20">
+                                    {chats.find(c => c.id === activeChat)?.role || "User"}
+                                </span>
                             </div>
                         </div>
 

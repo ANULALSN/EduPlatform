@@ -16,6 +16,7 @@ const HomePage = () => {
 
                     <div className="flex items-center gap-6">
                         <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+                            <Link to="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
                             <a href="#" className="hover:text-white transition-colors">Courses</a>
                             <a href="#" className="hover:text-white transition-colors">Mentors</a>
                             <a href="#" className="hover:text-white transition-colors">Community</a>
