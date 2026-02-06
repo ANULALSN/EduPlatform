@@ -15,7 +15,7 @@ const MentorsPage = () => {
 
     const fetchMentors = async () => {
         try {
-            const response = await fetch(`${API_URL}/chat/mentors`);
+            const response = await fetch(`${API_URL}/chat/contacts?role=tutor`);
             if (response.ok) {
                 const data = await response.json();
                 setMentors(data);

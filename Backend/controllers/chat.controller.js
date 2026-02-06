@@ -1,13 +1,17 @@
 import User from '../models/User.js';
 import Message from '../models/Message.js';
 
-// @desc    Get all mentors (optionally filter by skill/interest)
-// @route   GET /api/chat/mentors
+// @desc    Get contacts (mentors or students)
+// @route   GET /api/chat/contacts
 // @access  Public (or Private)
-export const getMentors = async (req, res) => {
+export const getContacts = async (req, res) => {
     try {
-        const { skill, search } = req.query;
-        let query = { role: 'tutor' };
+        const { role, skill, search } = req.query;
+        let query = {};
+
+        if (role) {
+            query.role = role;
+        }
 
         if (skill) {
             // Case insensitive match for interests (expertises)
@@ -18,8 +22,8 @@ export const getMentors = async (req, res) => {
             query.fullName = { $regex: new RegExp(search, 'i') };
         }
 
-        const mentors = await User.find(query).select('-password -sessions');
-        res.json(mentors);
+        const users = await User.find(query).select('-password -sessions');
+        res.json(users);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

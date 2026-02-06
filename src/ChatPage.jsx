@@ -32,22 +32,28 @@ const ChatPage = () => {
     }, [initialMentorId, user]);
 
     const fetchChats = async (user) => {
-        // Mock data for side bar
-        // Ideally fetch from /api/chat/history/userId
+        try {
+            const isStudent = user?.role === "student";
+            const targetRole = isStudent ? "tutor" : "student";
 
-        const isStudent = user?.role === "student";
+            const response = await fetch(`${API_URL}/chat/contacts?role=${targetRole}`);
 
-        if (isStudent) {
-            setChats([
-                { id: "1", name: "Arjun K", lastMsg: "See you at 5!", time: "10:30 AM", avatar: null, role: "Mentor" },
-                { id: "2", name: "Sarah M", lastMsg: "Great progress!", time: "Yesterday", avatar: null, role: "Mentor" }
-            ]);
-        } else {
-            // If User is Mentor, show Students
-            setChats([
-                { id: "101", name: "Rahul S", lastMsg: "I have a doubt in React", time: "10:05 AM", avatar: null, role: "Student" },
-                { id: "102", name: "Anjali P", lastMsg: "Assignment Submitted", time: "Yesterday", avatar: null, role: "Student" }
-            ]);
+            if (response.ok) {
+                const data = await response.json();
+
+                const formattedChats = data.map(u => ({
+                    id: u._id,
+                    name: u.fullName,
+                    lastMsg: "Click to start chatting", // Placeholder logic
+                    time: "",
+                    avatar: u.avatar || null,
+                    role: u.role === "tutor" ? "Mentor" : "Student"
+                }));
+
+                setChats(formattedChats);
+            }
+        } catch (error) {
+            console.error("Error fetching chats", error);
         }
     };
 

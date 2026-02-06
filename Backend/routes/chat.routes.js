@@ -1,9 +1,8 @@
-import express from 'express';
-import { sendMessage, getChatHistory, getMentors } from '../controllers/chat.controller.js';
+import { sendMessage, getChatHistory, getContacts } from '../controllers/chat.controller.js';
 
 const router = express.Router();
 
-router.get('/mentors', getMentors);
+router.get('/contacts', getContacts);
 router.post('/send', sendMessage);
 router.get('/history/:userId', getChatHistory);
 
