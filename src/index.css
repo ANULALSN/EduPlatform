@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --color-slate-900: #0f172a;
+  --color-fuchsia-600: #c026d3;
+  --color-pink-600: #db2777;
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-2xl backdrop-saturate-150 border border-white/10 shadow-2xl;
+  }
+
+  .glass-panel {
+    @apply bg-slate-900/60 backdrop-blur-xl border-b border-white/5;
+  }
+
+  .glass-btn {
+    @apply bg-white/10 hover:bg-white/20 border border-white/5 backdrop-blur-md transition-all active:scale-95;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400;
+  }
+
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 to-pink-500;
+  }
+}
