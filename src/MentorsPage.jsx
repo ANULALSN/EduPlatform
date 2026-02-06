@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, MessageCircle, User, Star, ChevronLeft } from "lucide-react";
+import API_URL from "./config";
 
 const MentorsPage = () => {
     const [searchTerm, setSearchTerm] = useState("");
@@ -14,7 +15,7 @@ const MentorsPage = () => {
 
     const fetchMentors = async () => {
         try {
-            const response = await fetch("http://localhost:5000/api/chat/mentors");
+            const response = await fetch(`${API_URL}/chat/mentors`);
             if (response.ok) {
                 const data = await response.json();
                 setMentors(data);

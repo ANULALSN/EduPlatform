@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { User, Mail, Phone, Lock, Camera, Sparkles, ChevronLeft, Save } from "lucide-react";
+import API_URL from "./config";
 
 const ProfilePage = () => {
     // Mock user data - normally fetched from API/Context
@@ -65,7 +66,8 @@ const ProfilePage = () => {
                 return;
             }
 
-            const response = await fetch(`http://localhost:5000/api/users/profile/${savedUser._id}`, {
+
+            const response = await fetch(`${API_URL}/users/profile/${savedUser._id}`, {
                 method: "PUT",
                 body: submitData
             });

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Send, Paperclip, ChevronLeft, Users, Radio } from "lucide-react";
+import API_URL from "./config";
 
 const ChatPage = () => {
     const [searchParams] = useSearchParams();
@@ -41,7 +42,7 @@ const ChatPage = () => {
 
     const fetchHistory = async (userId, otherId) => {
         try {
-            const response = await fetch(`http://localhost:5000/api/chat/history/${userId}?otherUserId=${otherId}`);
+            const response = await fetch(`${API_URL}/chat/history/${userId}?otherUserId=${otherId}`);
             if (response.ok) {
                 const data = await response.json();
                 setMessages(data);
@@ -70,7 +71,7 @@ const ChatPage = () => {
         };
 
         try {
-            const response = await fetch("http://localhost:5000/api/chat/send", {
+            const response = await fetch(`${API_URL}/chat/send`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
@@ -97,7 +98,7 @@ const ChatPage = () => {
         };
 
         try {
-            const response = await fetch("http://localhost:5000/api/chat/send", {
+            const response = await fetch(`${API_URL}/chat/send`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)

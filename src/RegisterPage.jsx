@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Camera, User, Mail, Lock, Code, ChevronRight, Briefcase, Phone, Sparkles } from "lucide-react";
+import API_URL from "./config";
 
 const RegisterPage = () => {
   const [role, setRole] = useState("student");
@@ -70,7 +71,7 @@ const RegisterPage = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         body: submitData,
       });
