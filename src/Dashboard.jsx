@@ -2,41 +2,64 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
     LayoutDashboard, BookOpen, FileText, Video, Settings, LogOut,
-    Bell, Search, Plus, Users, MessageCircle
+    Bell, Search, Plus, Users, MessageCircle, Home
 } from "lucide-react";
+import API_URL from "./config";
 
 const Dashboard = () => {
-    // 1. Get User Info from LocalStorage
     const [user, setUser] = useState({
         name: "User",
-        role: "student", // Default role
+        role: "student",
         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
         ...JSON.parse(localStorage.getItem("userInfo") || "{}")
     });
 
-    // Ensure state stays in sync if localStorage changes (optional, but good for reliable demos)
+    const [analytics, setAnalytics] = useState({});
+    const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+
     useEffect(() => {
         const storedUser = JSON.parse(localStorage.getItem("userInfo"));
         if (storedUser) {
             setUser(prev => ({ ...prev, ...storedUser }));
+            fetchAnalytics(storedUser);
         }
     }, []);
+
+    const fetchAnalytics = async (userData) => {
+        try {
+            const response = await fetch(`${API_URL}/analytics/${userData._id}?role=${userData.role}`, {
+                headers: {
+                    'Authorization': `Bearer ${userData.token}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setAnalytics(data);
+            }
+        } catch (error) {
+            console.error("Error fetching analytics", error);
+        } finally {
+            setLoadingAnalytics(false);
+        }
+    };
 
     const role = user.role;
     const isStudent = role === "student";
 
     const [showNotifications, setShowNotifications] = useState(false);
     const [notifications] = useState([
-        { id: 1, text: "New course available: Advanced MERN", time: "2h ago", read: false },
-        { id: 2, text: "Mentor Arjun accepted your request", time: "5h ago", read: true },
-        { id: 3, text: "Welcome to EduConnect!", time: "1d ago", read: true },
+        { id: 1, text: "New course available: Advanced MERN", time: "2h ago", read: false, link: "/courses" },
+        { id: 2, text: "You have a new message", time: "3h ago", read: false, link: "/chat" },
+        { id: 3, text: "Mentor Arjun accepted your request", time: "5h ago", read: true, link: "/chat" },
+        { id: 4, text: "Welcome to EduConnect!", time: "1d ago", read: true, link: null },
     ]);
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
     const menuItems = [
+        { icon: Home, label: "Home", link: "/" },
         { icon: LayoutDashboard, label: "Dashboard", active: true, link: "/dashboard" },
-        { icon: BookOpen, label: "My Courses", link: "/dashboard" },
+        { icon: BookOpen, label: "My Courses", link: "/my-courses" },
 
         // Student Specific
         ...(isStudent ? [
@@ -46,8 +69,9 @@ const Dashboard = () => {
 
         // Tutor Specific
         ...(!isStudent ? [
-            { icon: FileText, label: "Student Requests", link: "#" },
-            { icon: Video, label: "Content Studio", link: "#" }
+            { icon: FileText, label: "Student Requests", link: "/student-requests", badge: analytics.pendingRequests },
+            { icon: Video, label: "Content Studio", link: "/my-courses" },
+            { icon: Plus, label: "Create Course", link: "/create-course" }
         ] : []),
 
         { icon: Users, label: "Mentors", link: "/mentors" },
@@ -55,14 +79,26 @@ const Dashboard = () => {
         { icon: Settings, label: "Settings", link: "/profile" },
     ];
 
+    const stats = isStudent ? [
+        { label: "Courses Enrolled", value: analytics.enrolledCourses || 0, sub: "In Progress" },
+        { label: "Certificates", value: analytics.certificates || 0, sub: "Earned" },
+        { label: "Resume Credits", value: analytics.resumeCredits || 3, sub: "Free uses" },
+        { label: "Completed", value: analytics.completedCourses || 0, sub: "Courses" },
+    ] : [
+        { label: "Total Students", value: analytics.totalStudents || 0, sub: "Enrolled" },
+        { label: "Active Courses", value: analytics.activeCourses || 0, sub: "Published" },
+        { label: "Pending Requests", value: analytics.pendingRequests || 0, sub: "To Review", link: "/student-requests" },
+        { label: "Total Earnings", value: `₹${analytics.totalEarnings || 0}`, sub: "This Month" },
+    ];
+
     return (
         <div className="flex h-screen bg-slate-900 text-white font-sans overflow-hidden">
             {/* Sidebar */}
             <aside className="w-64 bg-slate-900 border-r border-white/5 flex flex-col hidden md:flex">
                 <div className="p-6 border-b border-white/5">
-                    <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 to-pink-500">
+                    <Link to="/" className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 to-pink-500">
                         EdTech
-                    </span>
+                    </Link>
                     <div className="mt-2 text-xs px-2 py-1 rounded border border-white/10 inline-block text-slate-400 capitalize">
                         {role} Dashboard
                     </div>
@@ -75,7 +111,10 @@ const Dashboard = () => {
                             : "text-slate-400 hover:text-white hover:bg-white/5"
                             }`}>
                             <item.icon className={`w-5 h-5 ${item.active ? "text-fuchsia-500" : "text-slate-500"}`} />
-                            <span className="font-medium">{item.label}</span>
+                            <span className="font-medium flex-1">{item.label}</span>
+                            {item.badge > 0 && (
+                                <span className="px-2 py-0.5 bg-fuchsia-600 text-xs rounded-full">{item.badge}</span>
+                            )}
                         </Link>
                     ))}
                 </nav>
@@ -100,12 +139,12 @@ const Dashboard = () => {
                 <header className="h-20 border-b border-white/5 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-8 z-10">
                     <div className="flex items-center gap-4">
                         <h2 className="text-xl font-semibold text-slate-200">
-                            Welcome Back, <span className="text-white capitalize">{user.name}</span>
+                            Welcome Back, <span className="text-white capitalize">{user.fullName || user.name}</span>
                         </h2>
                     </div>
 
                     <div className="flex items-center gap-6">
-                        {/* Search (Hidden on mobile) */}
+                        {/* Search */}
                         <div className="relative hidden sm:block">
                             <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
                             <input
@@ -123,20 +162,27 @@ const Dashboard = () => {
                             >
                                 <Bell className="w-5 h-5" />
                                 {unreadCount > 0 && (
-                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-pink-500 rounded-full"></span>
+                                    <span className="absolute top-1 right-1 w-4 h-4 bg-pink-500 rounded-full text-[10px] font-bold flex items-center justify-center">{unreadCount}</span>
                                 )}
                             </button>
 
-                            {/* Dropdown */}
                             {showNotifications && (
                                 <div className="absolute right-0 mt-2 w-80 bg-slate-800 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
-                                    <div className="p-3 border-b border-white/10 font-semibold text-sm">Notifications</div>
+                                    <div className="p-3 border-b border-white/10 font-semibold text-sm flex justify-between">
+                                        <span>Notifications</span>
+                                        <span className="text-fuchsia-400">{unreadCount} new</span>
+                                    </div>
                                     <div className="max-h-64 overflow-y-auto">
                                         {notifications.map(notif => (
-                                            <div key={notif.id} className={`p-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${!notif.read ? 'bg-white/5' : ''}`}>
+                                            <Link
+                                                key={notif.id}
+                                                to={notif.link || "#"}
+                                                onClick={() => setShowNotifications(false)}
+                                                className={`block p-3 border-b border-white/5 hover:bg-white/5 transition-colors ${!notif.read ? 'bg-white/5' : ''}`}
+                                            >
                                                 <p className="text-sm text-slate-200">{notif.text}</p>
                                                 <span className="text-xs text-slate-500 block mt-1">{notif.time}</span>
-                                            </div>
+                                            </Link>
                                         ))}
                                     </div>
                                     <div className="p-2 text-center border-t border-white/10">
@@ -149,12 +195,12 @@ const Dashboard = () => {
                         {/* Profile Link */}
                         <Link to="/profile" className="flex items-center gap-3 group">
                             <div className="text-right hidden sm:block">
-                                <div className="text-sm font-medium text-white group-hover:text-fuchsia-400 transition-colors capitalize">{user.name}</div>
+                                <div className="text-sm font-medium text-white group-hover:text-fuchsia-400 transition-colors capitalize">{user.fullName || user.name}</div>
                                 <div className="text-xs text-slate-500 capitalize">{role}</div>
                             </div>
                             <div className="w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-700 overflow-hidden group-hover:border-fuchsia-500 transition-colors relative">
                                 <img
-                                    src={user.avatar || `https://ui-avatars.com/api/?name=${user.name}&background=random`}
+                                    src={user.avatar || `https://ui-avatars.com/api/?name=${user.fullName || user.name}&background=random`}
                                     alt="User"
                                     className="w-full h-full object-cover"
                                 />
@@ -163,25 +209,26 @@ const Dashboard = () => {
                     </div>
                 </header>
 
-                {/* Dashboard Stats & Content Content */}
+                {/* Dashboard Stats & Content */}
                 <div className="flex-1 overflow-y-auto p-8">
-                    {/* Stats Grid - Differentiate based on role if needed */}
+                    {/* Stats Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        {[
-                            { label: isStudent ? "Courses Enrolled" : "Total Students", value: isStudent ? "2" : "15", sub: isStudent ? "In Progress" : "Active" },
-                            { label: isStudent ? "Certificates" : "Active Courses", value: "0", sub: isStudent ? "Earned" : "Published" },
-                            { label: isStudent ? "Resume Credits" : "Total Earnings", value: "3", sub: isStudent ? "Free uses" : "This Month" },
-                            { label: isStudent ? "Interviews" : "Pending Requests", value: "1", sub: isStudent ? "Attended" : "To Review" },
-                        ].map((stat, idx) => (
-                            <div key={idx} className="bg-slate-800/40 border border-white/5 p-6 rounded-2xl hover:border-white/10 transition-colors">
+                        {stats.map((stat, idx) => (
+                            <Link
+                                key={idx}
+                                to={stat.link || "#"}
+                                className="bg-slate-800/40 border border-white/5 p-6 rounded-2xl hover:border-fuchsia-500/30 transition-colors group"
+                            >
                                 <h3 className="text-slate-400 text-sm font-medium mb-2">{stat.label}</h3>
-                                <div className="text-4xl font-bold text-white mb-1">{stat.value}</div>
+                                <div className="text-4xl font-bold text-white mb-1 group-hover:text-fuchsia-400 transition-colors">
+                                    {loadingAnalytics ? "..." : stat.value}
+                                </div>
                                 <div className="text-xs text-slate-500">{stat.sub}</div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
 
-                    {/* Action Center / Active Course */}
+                    {/* Action Center */}
                     <div className="bg-slate-800/40 border border-white/5 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center md:items-start group">
                         {isStudent ? (
                             <>
@@ -190,30 +237,49 @@ const Dashboard = () => {
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
                                 </div>
                                 <div className="flex-1 w-full">
-                                    <div className="text-xs font-bold text-fuchsia-400 tracking-wider mb-2 uppercase">Course in Progress</div>
-                                    <h3 className="text-2xl font-bold text-white mb-2">Full Stack Web Development</h3>
-                                    <p className="text-slate-400 mb-6">Module 3: Understanding React Hooks</p>
+                                    <div className="text-xs font-bold text-fuchsia-400 tracking-wider mb-2 uppercase">Quick Actions</div>
+                                    <h3 className="text-2xl font-bold text-white mb-2">Continue Learning</h3>
+                                    <p className="text-slate-400 mb-6">Pick up where you left off or discover new courses</p>
 
-                                    <div className="w-full bg-slate-700/50 rounded-full h-2 mb-6 overflow-hidden">
-                                        <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full w-[65%] rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                                    <div className="flex flex-wrap gap-3">
+                                        <Link to="/my-courses">
+                                            <button className="px-6 py-2.5 bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-lg font-medium transition-colors shadow-lg shadow-fuchsia-900/20">
+                                                My Courses
+                                            </button>
+                                        </Link>
+                                        <Link to="/courses">
+                                            <button className="px-6 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg font-medium transition-colors">
+                                                Browse All
+                                            </button>
+                                        </Link>
                                     </div>
-
-                                    <button className="px-6 py-2.5 bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-lg font-medium transition-colors shadow-lg shadow-fuchsia-900/20">
-                                        Resume Learning
-                                    </button>
                                 </div>
                             </>
                         ) : (
-                            // Mentor View
                             <div className="flex-1 w-full">
-                                <div className="text-xs font-bold text-fuchsia-400 tracking-wider mb-2 uppercase">Action Center</div>
-                                <h3 className="text-2xl font-bold text-white mb-2">Ready To Teach ?</h3>
-                                <p className="text-slate-400 mb-6">Upload Your Next Module</p>
-                                <Link to="/create-course">
-                                    <button className="px-6 py-2.5 bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-lg font-medium transition-colors shadow-lg shadow-fuchsia-900/20">
-                                        + Create New Class
-                                    </button>
-                                </Link>
+                                <div className="text-xs font-bold text-fuchsia-400 tracking-wider mb-2 uppercase">Mentor Action Center</div>
+                                <h3 className="text-2xl font-bold text-white mb-2">Ready To Teach?</h3>
+                                <p className="text-slate-400 mb-6">Create courses, manage students, and grow your teaching business</p>
+                                <div className="flex flex-wrap gap-3">
+                                    <Link to="/create-course">
+                                        <button className="px-6 py-2.5 bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-lg font-medium transition-colors shadow-lg shadow-fuchsia-900/20 flex items-center gap-2">
+                                            <Plus className="w-4 h-4" /> Create New Course
+                                        </button>
+                                    </Link>
+                                    <Link to="/my-courses">
+                                        <button className="px-6 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg font-medium transition-colors">
+                                            Manage Courses
+                                        </button>
+                                    </Link>
+                                    <Link to="/student-requests">
+                                        <button className="px-6 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                                            Student Requests
+                                            {analytics.pendingRequests > 0 && (
+                                                <span className="px-2 py-0.5 bg-fuchsia-600 text-xs rounded-full">{analytics.pendingRequests}</span>
+                                            )}
+                                        </button>
+                                    </Link>
+                                </div>
                             </div>
                         )}
                     </div>

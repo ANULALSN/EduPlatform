@@ -7,6 +7,8 @@ import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import courseRoutes from './routes/course.routes.js';
+import requestRoutes from './routes/request.routes.js';
+import analyticsRoutes from './routes/analytics.routes.js';
 
 const app = express();
 
@@ -28,6 +30,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/requests', requestRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 const PORT = 5000;
 app.listen(PORT, () => {

@@ -33,7 +33,7 @@ export const createCourse = async (req, res) => {
 // @access  Public
 export const getCourses = async (req, res) => {
     try {
-        const { category, search } = req.query;
+        const { category, search, mentor, enrolled } = req.query;
         let query = {};
 
         if (category) {
@@ -42,6 +42,14 @@ export const getCourses = async (req, res) => {
 
         if (search) {
             query.title = { $regex: new RegExp(search, 'i') };
+        }
+
+        if (mentor) {
+            query.mentor = mentor;
+        }
+
+        if (enrolled) {
+            query.enrolledStudents = enrolled;
         }
 
         const courses = await Course.find(query)
@@ -127,6 +135,32 @@ export const addReview = async (req, res) => {
         await course.save();
 
         res.status(201).json({ message: 'Review added' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update a course
+// @route   PUT /api/courses/:id
+// @access  Private (Mentor only)
+export const updateCourse = async (req, res) => {
+    try {
+        const { title, description, category, price, thumbnail, modules } = req.body;
+        const course = await Course.findById(req.params.id);
+
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        course.title = title || course.title;
+        course.description = description || course.description;
+        course.category = category || course.category;
+        course.price = price !== undefined ? price : course.price;
+        course.thumbnail = thumbnail || course.thumbnail;
+        course.modules = modules || course.modules;
+
+        const updatedCourse = await course.save();
+        res.json(updatedCourse);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
