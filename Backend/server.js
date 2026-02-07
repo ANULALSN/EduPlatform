@@ -6,6 +6,7 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import chatRoutes from './routes/chat.routes.js';
+import courseRoutes from './routes/course.routes.js';
 
 const app = express();
 
@@ -26,6 +27,7 @@ connectDB();
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/courses', courseRoutes);
 
 const PORT = 5000;
 app.listen(PORT, () => {

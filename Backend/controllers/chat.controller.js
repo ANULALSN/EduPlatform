@@ -1,20 +1,75 @@
 import User from '../models/User.js';
 import Message from '../models/Message.js';
+import Course from '../models/Course.js';
 
 // @desc    Get contacts (mentors or students)
 // @route   GET /api/chat/contacts
 // @access  Public (or Private)
+// @desc    Get contacts (mentors or students) based on enrollment
+// @route   GET /api/chat/contacts
+// @access  Public (or Private)
 export const getContacts = async (req, res) => {
     try {
-        const { role, skill, search } = req.query;
+        const { role, skill, search, userId } = req.query;
         let query = {};
+
+        // 1. If userId is provided, filter based on relationships (Enrollments)
+        if (userId) {
+            // Find the currentUser to check their role
+            const currentUser = await User.findById(userId);
+
+            if (currentUser) {
+                if (currentUser.role === 'student') {
+                    // Student can see: Mentors of courses they are enrolled in
+                    const enrolledCourses = await Course.find({ enrolledStudents: userId }).select('mentor');
+                    const mentorIds = enrolledCourses.map(c => c.mentor);
+
+                    // Also include users they already have chat history with (optional, but good for UX)
+                    const historyMessages = await Message.find({
+                        $or: [{ sender: userId }, { receivers: userId }]
+                    }).select('sender receivers');
+
+                    const historyIds = new Set();
+                    historyMessages.forEach(msg => {
+                        if (msg.sender.toString() !== userId) historyIds.add(msg.sender.toString());
+                        msg.receivers.forEach(r => {
+                            if (r.toString() !== userId) historyIds.add(r.toString());
+                        });
+                    });
+
+                    query._id = { $in: [...mentorIds, ...Array.from(historyIds)] };
+
+                } else if (currentUser.role === 'tutor') {
+                    // Tutor can see: Students enrolled in their courses
+                    const myCourses = await Course.find({ mentor: userId }).select('enrolledStudents');
+                    let studentIds = [];
+                    myCourses.forEach(c => {
+                        studentIds = [...studentIds, ...c.enrolledStudents];
+                    });
+
+                    // Also include history
+                    const historyMessages = await Message.find({
+                        $or: [{ sender: userId }, { receivers: userId }]
+                    }).select('sender receivers');
+
+                    const historyIds = new Set();
+                    historyMessages.forEach(msg => {
+                        if (msg.sender.toString() !== userId) historyIds.add(msg.sender.toString());
+                        msg.receivers.forEach(r => {
+                            if (r.toString() !== userId) historyIds.add(r.toString());
+                        });
+                    });
+
+                    query._id = { $in: [...studentIds, ...Array.from(historyIds)] };
+                }
+            }
+        }
 
         if (role) {
             query.role = role;
         }
 
         if (skill) {
-            // Case insensitive match for interests (expertises)
             query.interests = { $regex: new RegExp(skill, 'i') };
         }
 

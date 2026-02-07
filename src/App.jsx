@@ -9,6 +9,8 @@ import ProfilePage from './ProfilePage';
 import ResumeBuilder from './ResumeBuilder';
 import MentorsPage from './MentorsPage';
 import ChatPage from './ChatPage';
+import CreateCoursePage from './CreateCoursePage';
+import CourseDetailsPage from './CourseDetailsPage';
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/courses" element={<BrowseCourses />} />
+        <Route path="/courses/:id" element={<CourseDetailsPage />} />
+        <Route path="/create-course" element={<CreateCoursePage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/resume" element={<ResumeBuilder />} />
         <Route path="/mentors" element={<MentorsPage />} />

@@ -50,7 +50,8 @@ const ChatPage = () => {
             const isStudent = user?.role === "student";
             const targetRole = isStudent ? "tutor" : "student";
 
-            const response = await fetch(`${API_URL}/chat/contacts?role=${targetRole}`);
+            // Pass current user ID to server for restricted list
+            const response = await fetch(`${API_URL}/chat/contacts?role=${targetRole}&userId=${user._id}`);
 
             if (response.ok) {
                 const data = await response.json();
