@@ -47,6 +47,7 @@ const Dashboard = () => {
     const isStudent = role === "student";
 
     const [showNotifications, setShowNotifications] = useState(false);
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [notifications] = useState([
         { id: 1, text: "New course available: Advanced MERN", time: "2h ago", read: false, link: "/courses" },
         { id: 2, text: "You have a new message", time: "3h ago", read: false, link: "/chat" },
@@ -192,20 +193,48 @@ const Dashboard = () => {
                             )}
                         </div>
 
-                        {/* Profile Link */}
-                        <Link to="/profile" className="flex items-center gap-3 group">
-                            <div className="text-right hidden sm:block">
-                                <div className="text-sm font-medium text-white group-hover:text-fuchsia-400 transition-colors capitalize">{user.fullName || user.name}</div>
-                                <div className="text-xs text-slate-500 capitalize">{role}</div>
-                            </div>
-                            <div className="w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-700 overflow-hidden group-hover:border-fuchsia-500 transition-colors relative">
-                                <img
-                                    src={user.avatar || `https://ui-avatars.com/api/?name=${user.fullName || user.name}&background=random`}
-                                    alt="User"
-                                    className="w-full h-full object-cover"
-                                />
-                            </div>
-                        </Link>
+                        {/* Profile Dropdown */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                                className="flex items-center gap-3 group"
+                            >
+                                <div className="text-right hidden sm:block">
+                                    <div className="text-sm font-medium text-white group-hover:text-fuchsia-400 transition-colors capitalize">{user.fullName || user.name}</div>
+                                    <div className="text-xs text-slate-500 capitalize">{role}</div>
+                                </div>
+                                <div className="w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-700 overflow-hidden group-hover:border-fuchsia-500 transition-colors relative">
+                                    <img
+                                        src={user.avatar || `https://ui-avatars.com/api/?name=${user.fullName || user.name}&background=random`}
+                                        alt="User"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            </button>
+
+                            {showProfileMenu && (
+                                <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                                    <Link
+                                        to="/profile"
+                                        onClick={() => setShowProfileMenu(false)}
+                                        className="block px-4 py-3 hover:bg-white/5 text-sm text-slate-200 flex items-center gap-3"
+                                    >
+                                        <Settings className="w-4 h-4" />
+                                        My Profile
+                                    </Link>
+                                    <button
+                                        onClick={() => {
+                                            localStorage.removeItem("userInfo");
+                                            window.location.href = "/login";
+                                        }}
+                                        className="w-full px-4 py-3 hover:bg-red-500/10 text-sm text-red-400 flex items-center gap-3 border-t border-white/5"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        Log Out
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </header>
 

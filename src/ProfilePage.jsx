@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { User, Mail, Phone, Lock, Camera, Sparkles, ChevronLeft, Save } from "lucide-react";
+import { User, Mail, Phone, Lock, Camera, Sparkles, ChevronLeft, Save, LogOut } from "lucide-react";
 import API_URL from "./config";
 
 const ProfilePage = () => {
+    const navigate = useNavigate();
     // Mock user data - normally fetched from API/Context
     const [userData, setUserData] = useState(() => {
         const saved = localStorage.getItem("userInfo");
@@ -161,6 +162,18 @@ const ProfilePage = () => {
                                     <span className="text-sm text-slate-200">{userData.mobile}</span>
                                 </div>
                             </div>
+
+                            {/* Logout Button */}
+                            <button
+                                onClick={() => {
+                                    localStorage.removeItem("userInfo");
+                                    navigate("/login");
+                                }}
+                                className="mt-6 w-full py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-medium transition-all flex items-center justify-center gap-2"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                Log Out
+                            </button>
                         </div>
                     </div>
 
