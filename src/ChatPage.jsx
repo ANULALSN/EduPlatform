@@ -29,7 +29,7 @@ const ChatPage = () => {
             // Fetch specific chat history
             fetchHistory(user._id, initialMentorId);
         }
-    }, [initialMentorId, user]);
+    }, [initialMentorId]);
 
     const fetchChats = async (user) => {
         try {
