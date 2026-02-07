@@ -127,3 +127,38 @@ export const loginUser = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// @desc    Validate current session
+// @route   POST /api/auth/validate-session
+// @access  Private (requires token)
+export const validateSession = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+
+        if (!token) {
+            return res.status(401).json({ valid: false, message: 'No token provided' });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+
+        if (!user) {
+            return res.status(401).json({ valid: false, message: 'User not found' });
+        }
+
+        // Check if token exists in active sessions
+        const sessionExists = user.sessions && user.sessions.some(session => session.token === token);
+
+        if (!sessionExists) {
+            return res.status(401).json({
+                valid: false,
+                message: 'Session expired. You have been logged in from another device.'
+            });
+        }
+
+        res.json({ valid: true, user: { _id: user._id, fullName: user.fullName, role: user.role } });
+    } catch (error) {
+        console.error("Session Validation Error:", error);
+        res.status(401).json({ valid: false, message: 'Invalid token' });
+    }
+};
