@@ -1,3 +1,4 @@
+import express from 'express';
 import { sendMessage, getChatHistory, getContacts } from '../controllers/chat.controller.js';
 
 const router = express.Router();
