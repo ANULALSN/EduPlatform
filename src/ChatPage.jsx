@@ -31,6 +31,20 @@ const ChatPage = () => {
         }
     }, [initialMentorId]);
 
+    // Polling for real-time updates
+    useEffect(() => {
+        let interval;
+        if (currentUser && activeChat) {
+            // Fetch immediately
+            fetchHistory(currentUser._id, activeChat);
+            // Then poll every 3 seconds
+            interval = setInterval(() => {
+                fetchHistory(currentUser._id, activeChat);
+            }, 3000);
+        }
+        return () => clearInterval(interval);
+    }, [currentUser, activeChat]);
+
     const fetchChats = async (user) => {
         try {
             const isStudent = user?.role === "student";
