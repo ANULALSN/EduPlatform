@@ -51,7 +51,11 @@ const ChatPage = () => {
             const targetRole = isStudent ? "tutor" : "student";
 
             // Pass current user ID to server for restricted list
-            const response = await fetch(`${API_URL}/chat/contacts?role=${targetRole}&userId=${user._id}`);
+            const response = await fetch(`${API_URL}/chat/contacts?role=${targetRole}&userId=${user._id}`, {
+                headers: {
+                    'Authorization': `Bearer ${user.token || JSON.parse(localStorage.getItem("userInfo")).token}`
+                }
+            });
 
             if (response.ok) {
                 const data = await response.json();
@@ -74,7 +78,11 @@ const ChatPage = () => {
 
     const fetchHistory = async (userId, otherId) => {
         try {
-            const response = await fetch(`${API_URL}/chat/history/${userId}?otherUserId=${otherId}`);
+            const response = await fetch(`${API_URL}/chat/history/${userId}?otherUserId=${otherId}`, {
+                headers: {
+                    'Authorization': `Bearer ${currentUser?.token || JSON.parse(localStorage.getItem("userInfo"))?.token}`
+                }
+            });
             if (response.ok) {
                 const data = await response.json();
                 setMessages(data);
@@ -105,7 +113,10 @@ const ChatPage = () => {
         try {
             const response = await fetch(`${API_URL}/chat/send`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    'Authorization': `Bearer ${currentUser?.token || JSON.parse(localStorage.getItem("userInfo"))?.token}`
+                },
                 body: JSON.stringify(payload)
             });
 

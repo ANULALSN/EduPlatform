@@ -93,12 +93,8 @@ export const loginUser = async (req, res) => {
             const token = generateToken(user.id);
 
             // --- Session Management Logic ---
-
             // 1. Remove any existing session for THIS device type
-            // This effectively "kicks out" the previous login on the same device type
             let currentSessions = user.sessions || [];
-
-            // Filter out the session with the same deviceType
             currentSessions = currentSessions.filter(session => session.deviceType !== deviceType);
 
             // 2. Add the new session
