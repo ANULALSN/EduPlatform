@@ -70,6 +70,9 @@ const ProfilePage = () => {
 
             const response = await fetch(`${API_URL}/users/profile/${savedUser._id}`, {
                 method: "PUT",
+                headers: {
+                    'Authorization': `Bearer ${savedUser.token}`
+                },
                 body: submitData
             });
 
