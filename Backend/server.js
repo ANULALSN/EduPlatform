@@ -18,7 +18,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000', 'https://edu-platform-indol.vercel.app'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000', 'https://edu-platform-indol.vercel.app', 'https://edu-platform-admin.vercel.app'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
