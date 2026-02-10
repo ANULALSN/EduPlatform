@@ -1,5 +1,7 @@
 import Course from '../models/Course.js';
 import StudentRequest from '../models/StudentRequest.js';
+import Transaction from '../models/Transaction.js';
+import User from '../models/User.js';
 
 // Get analytics for a user (student or mentor)
 export const getAnalytics = async (req, res) => {
@@ -9,14 +11,18 @@ export const getAnalytics = async (req, res) => {
 
         if (role === 'student') {
             const enrolledCourses = await Course.countDocuments({ enrolledStudents: userId });
-            const completedCourses = 0; // Placeholder - would need progress tracking
-            const certificates = 0; // Placeholder
+
+            // Count unique courses where user has at least 1 completed module
+            const userData = await User.findById(userId).select('completedModules');
+            const completedCourseIds = new Set(
+                (userData?.completedModules || []).map(cm => cm.course.toString())
+            );
 
             res.json({
                 enrolledCourses,
-                completedCourses,
-                certificates,
-                resumeCredits: 3 // Placeholder
+                completedCourses: completedCourseIds.size,
+                certificates: 0,
+                resumeCredits: 3
             });
         } else if (role === 'tutor') {
             const myCourses = await Course.find({ mentor: userId });
@@ -27,14 +33,20 @@ export const getAnalytics = async (req, res) => {
                 totalStudents += c.enrolledStudents?.length || 0;
             });
 
-            const activeCourses = myCourses.length;
+            const activeCourses = myCourses.filter(c => c.status === 'approved').length;
             const pendingRequests = await StudentRequest.countDocuments({ mentor: userId, status: 'pending' });
+
+            // Real earnings from transactions
+            const earnings = await Transaction.aggregate([
+                { $match: { course: { $in: courseIds }, status: 'completed' } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]);
 
             res.json({
                 totalStudents,
                 activeCourses,
                 pendingRequests,
-                totalEarnings: 0 // Placeholder
+                totalEarnings: earnings[0]?.total || 0
             });
         } else {
             res.status(400).json({ message: 'Invalid role' });
@@ -43,3 +55,4 @@ export const getAnalytics = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+

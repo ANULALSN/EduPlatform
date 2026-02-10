@@ -1,4 +1,5 @@
 import Course from '../models/Course.js';
+import User from '../models/User.js';
 
 // @desc    Create a new course
 // @route   POST /api/courses
@@ -36,6 +37,14 @@ export const getCourses = async (req, res) => {
         const { category, search, mentor, enrolled } = req.query;
         let query = {};
 
+        // Public browsing: only show approved courses
+        // If mentor param is set, show all their courses (for tutor's own dashboard)
+        if (mentor) {
+            query.mentor = mentor;
+        } else {
+            query.status = 'approved';
+        }
+
         if (category) {
             query.category = category;
         }
@@ -44,16 +53,12 @@ export const getCourses = async (req, res) => {
             query.title = { $regex: new RegExp(search, 'i') };
         }
 
-        if (mentor) {
-            query.mentor = mentor;
-        }
-
         if (enrolled) {
             query.enrolledStudents = enrolled;
         }
 
         const courses = await Course.find(query)
-            .populate('mentor', 'fullName avatar')
+            .populate('mentor', 'fullName avatar averageRating')
             .sort({ createdAt: -1 });
 
         res.json(courses);
@@ -122,7 +127,7 @@ export const addReview = async (req, res) => {
         // Check if already reviewed
         const alreadyReviewed = course.ratings.find(r => r.student.toString() === studentId);
         if (alreadyReviewed) {
-            return res.status(400).json({ message: 'Product already reviewed' });
+            return res.status(400).json({ message: 'Already reviewed' });
         }
 
         const reviewData = {
@@ -133,6 +138,24 @@ export const addReview = async (req, res) => {
 
         course.ratings.push(reviewData);
         await course.save();
+
+        // Recalculate tutor's average rating across ALL their courses
+        const tutorCourses = await Course.find({ mentor: course.mentor });
+        let totalRating = 0;
+        let totalCount = 0;
+        tutorCourses.forEach(c => {
+            c.ratings.forEach(r => {
+                totalRating += r.rating;
+                totalCount++;
+            });
+        });
+
+        if (totalCount > 0) {
+            await User.findByIdAndUpdate(course.mentor, {
+                averageRating: (totalRating / totalCount).toFixed(1),
+                totalRatings: totalCount
+            });
+        }
 
         res.status(201).json({ message: 'Review added' });
     } catch (error) {

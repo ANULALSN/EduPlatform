@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, MessageCircle, User, Star, ChevronLeft, Users } from "lucide-react";
+import { Search, MessageCircle, User, Star, ChevronLeft, Users, Send } from "lucide-react";
 import API_URL from "./config";
 
 const DUMMY_MENTORS = [
@@ -53,13 +53,17 @@ const MentorsPage = () => {
     const [loading, setLoading] = useState(true);
     const user = JSON.parse(localStorage.getItem("userInfo") || "{}");
 
+    const [myRequests, setMyRequests] = useState([]);
+
     useEffect(() => {
         fetchMentors();
+        if (user?._id) fetchMyRequests();
     }, []);
 
     const fetchMentors = async () => {
         try {
-            const response = await fetch(`${API_URL}/chat/contacts?role=tutor&userId=${user._id}`, {
+            // Fetch ALL tutors (remove userId to get everyone)
+            const response = await fetch(`${API_URL}/chat/contacts?role=tutor`, {
                 headers: {
                     'Authorization': `Bearer ${user.token}`
                 }
@@ -80,6 +84,59 @@ const MentorsPage = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const fetchMyRequests = async () => {
+        try {
+            const response = await fetch(`${API_URL}/requests/student/${user._id}`, {
+                headers: { 'Authorization': `Bearer ${user.token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setMyRequests(data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch requests", error);
+        }
+    };
+
+    const handleRequestMentorship = async (mentorId) => {
+        if (!user?._id) {
+            alert("Please login to request mentorship");
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/requests`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    'Authorization': `Bearer ${user.token}`
+                },
+                body: JSON.stringify({
+                    studentId: user._id,
+                    mentorId: mentorId,
+                    message: "I would like to request mentorship from you."
+                })
+            });
+
+            if (response.ok) {
+                alert("Request sent successfully!");
+                fetchMyRequests(); // Refresh status
+            } else {
+                const err = await response.json();
+                alert(err.message || "Failed to send request");
+            }
+        } catch (error) {
+            console.error("Error sending request", error);
+        }
+    };
+
+    const getMentorStatus = (mentorId) => {
+        // Check if I have a request for this mentor
+        const req = myRequests.find(r => r.mentor._id === mentorId || r.mentor === mentorId);
+        if (!req) return "none";
+        return req.status; // pending, accepted, rejected
     };
 
     const filteredMentors = mentors.filter(mentor =>
@@ -162,17 +219,63 @@ const MentorsPage = () => {
                                     ))}
                                 </div>
 
-                                <div className="flex gap-3">
-                                    <button className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-medium transition-colors border border-white/5">
-                                        View Profile
-                                    </button>
-                                    <Link
-                                        to={mentor._id.startsWith("mentor") ? "/chat" : `/chat?mentor=${mentor._id}`}
-                                        className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:scale-[1.02] active:scale-[0.98] text-sm font-bold transition-all flex items-center justify-center gap-2"
-                                    >
-                                        <MessageCircle className="w-4 h-4" />
-                                        Chat
-                                    </Link>
+                                <div className="flex gap-2">
+                                    {/* Button Logic:
+                                            1. If Accepted -> Show CHAT
+                                            2. If Pending -> Show PENDING (Disabled)
+                                            3. If None -> Show REQUEST
+                                         */}
+                                    {(() => {
+                                        const status = getMentorStatus(mentor._id);
+
+                                        // Dummy mentors always show chat for demo purposes if starting with 'mentor'
+                                        if (mentor._id.startsWith("mentor")) {
+                                            return (
+                                                <Link
+                                                    to="/chat"
+                                                    className="w-full px-4 py-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:scale-[1.02] active:scale-[0.98] text-sm font-bold transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <MessageCircle className="w-4 h-4" />
+                                                    Chat (Demo)
+                                                </Link>
+                                            );
+                                        }
+
+                                        if (status === "accepted") {
+                                            return (
+                                                <Link
+                                                    to={`/chat?mentor=${mentor._id}`}
+                                                    className="w-full px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:scale-[1.02] active:scale-[0.98] text-sm font-bold transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <MessageCircle className="w-4 h-4" />
+                                                    Chat
+                                                </Link>
+                                            );
+                                        }
+
+                                        if (status === "pending") {
+                                            return (
+                                                <button
+                                                    disabled
+                                                    className="w-full px-4 py-2 rounded-xl bg-white/5 text-slate-400 text-sm font-bold flex items-center justify-center gap-2 cursor-not-allowed border border-white/5"
+                                                >
+                                                    <Send className="w-4 h-4" />
+                                                    Request Sent
+                                                </button>
+                                            );
+                                        }
+
+                                        return (
+                                            <button
+                                                onClick={() => handleRequestMentorship(mentor._id)}
+                                                className="w-full px-4 py-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:scale-[1.02] active:scale-[0.98] text-sm font-bold transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <User className="w-4 h-4" />
+                                                Request Mentorship
+                                            </button>
+                                        );
+                                    })()}
+
                                 </div>
 
                                 {mentor._id.startsWith("mentor") && (

@@ -1,4 +1,7 @@
 import StudentRequest from '../models/StudentRequest.js';
+import User from '../models/User.js';
+import Course from '../models/Course.js';
+import Notification from '../models/Notification.js';
 
 // Create a new student request
 export const createRequest = async (req, res) => {
@@ -20,6 +23,16 @@ export const createRequest = async (req, res) => {
             mentor: mentorId,
             course: courseId,
             message
+        });
+
+        // Notify the mentor about the new request
+        const student = await User.findById(studentId).select('fullName');
+        await Notification.create({
+            user: mentorId,
+            title: 'New Mentorship Request',
+            message: `${student?.fullName || 'A student'} has requested mentorship from you.`,
+            type: 'system',
+            link: '/student-requests'
         });
 
         res.status(201).json(request);
@@ -48,7 +61,7 @@ export const getRequestsForMentor = async (req, res) => {
     }
 };
 
-// Update request status (accept/reject)
+// Update request status (accept/reject) — FULL WORKFLOW
 export const updateRequestStatus = async (req, res) => {
     try {
         const { requestId } = req.params;
@@ -58,17 +71,60 @@ export const updateRequestStatus = async (req, res) => {
             return res.status(400).json({ message: 'Invalid status' });
         }
 
-        const request = await StudentRequest.findByIdAndUpdate(
-            requestId,
-            { status },
-            { new: true }
-        ).populate('student', 'fullName email avatar');
+        const request = await StudentRequest.findById(requestId)
+            .populate('student', 'fullName email avatar')
+            .populate('mentor', 'fullName meetingLink');
 
         if (!request) {
             return res.status(404).json({ message: 'Request not found' });
         }
 
+        request.status = status;
+
+        if (status === 'accepted') {
+            // 1. Auto-enroll student in course (if courseId exists)
+            if (request.course) {
+                await Course.findByIdAndUpdate(request.course, {
+                    $addToSet: { enrolledStudents: request.student._id }
+                });
+            }
+
+            // 2. Get meeting link from tutor profile
+            const meetingLink = request.mentor?.meetingLink || '';
+
+            // 3. Create notification for student
+            await Notification.create({
+                user: request.student._id,
+                title: 'Session Confirmed! 🎉',
+                message: `Your mentorship request to ${request.mentor?.fullName} has been accepted.${meetingLink ? ` Meeting link: ${meetingLink}` : ''}`,
+                type: 'request_accepted',
+                link: `/chat?mentor=${request.mentor._id}`
+            });
+        } else if (status === 'rejected') {
+            await Notification.create({
+                user: request.student._id,
+                title: 'Request Update',
+                message: `Your mentorship request was declined by ${request.mentor?.fullName}. You can try other mentors.`,
+                type: 'request_rejected',
+                link: '/mentors'
+            });
+        }
+
+        await request.save();
+
         res.json(request);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Get requests by student
+export const getRequestsForStudent = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const requests = await StudentRequest.find({ student: studentId })
+            .populate('mentor', 'fullName avatar');
+        res.json(requests);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

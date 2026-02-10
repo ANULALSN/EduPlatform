@@ -17,6 +17,7 @@ const courseSchema = new mongoose.Schema({
     thumbnail: { type: String }, // URL
     category: { type: String, required: true },
     price: { type: Number, default: 0 },
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
     mentor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     enrolledStudents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     modules: [moduleSchema],

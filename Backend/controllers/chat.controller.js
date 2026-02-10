@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import Message from '../models/Message.js';
 import Course from '../models/Course.js';
+import StudentRequest from '../models/StudentRequest.js';
 
 // @desc    Get contacts (mentors or students)
 // @route   GET /api/chat/contacts
@@ -37,7 +38,14 @@ export const getContacts = async (req, res) => {
                         });
                     });
 
-                    query._id = { $in: [...mentorIds, ...Array.from(historyIds)] };
+                    // Also include mentors via accepted StudentRequest
+                    const acceptedRequests = await StudentRequest.find({
+                        student: userId,
+                        status: 'accepted'
+                    }).select('mentor');
+                    const requestMentorIds = acceptedRequests.map(r => r.mentor);
+
+                    query._id = { $in: [...mentorIds, ...requestMentorIds, ...Array.from(historyIds)] };
 
                 } else if (currentUser.role === 'tutor') {
                     // Tutor can see: Students enrolled in their courses
@@ -60,7 +68,14 @@ export const getContacts = async (req, res) => {
                         });
                     });
 
-                    query._id = { $in: [...studentIds, ...Array.from(historyIds)] };
+                    // Also include students via accepted StudentRequest
+                    const acceptedRequests = await StudentRequest.find({
+                        mentor: userId,
+                        status: 'accepted'
+                    }).select('student');
+                    const requestStudentIds = acceptedRequests.map(r => r.student);
+
+                    query._id = { $in: [...studentIds, ...requestStudentIds, ...Array.from(historyIds)] };
                 }
             }
         }

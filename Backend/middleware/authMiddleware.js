@@ -22,6 +22,11 @@ export const protect = async (req, res, next) => {
                 return res.status(401).json({ message: 'Not authorized, user not found' });
             }
 
+            // --- Ban Check ---
+            if (user.isBanned) {
+                return res.status(403).json({ message: 'Your account has been suspended. Contact support.' });
+            }
+
             // --- Session Enforcement Logic ---
             // Check if this specific token exists in the user's active sessions
             const sessionExists = user.sessions && user.sessions.some(session => session.token === token);
@@ -42,3 +47,13 @@ export const protect = async (req, res, next) => {
         res.status(401).json({ message: 'Not authorized, no token' });
     }
 };
+
+// Admin-only middleware (use AFTER protect)
+export const adminOnly = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+};
+

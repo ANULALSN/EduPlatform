@@ -15,6 +15,7 @@ import CourseDetailsPage from './CourseDetailsPage';
 import StudentRequestsPage from './StudentRequestsPage';
 import MyCoursesPage from './MyCoursesPage';
 import EditCoursePage from './EditCoursePage';
+import AdminDashboard from './AdminDashboard';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
           <Route path="/resume" element={<ResumeBuilder />} />
           <Route path="/mentors" element={<MentorsPage />} />
           <Route path="/chat" element={<ChatPage />} />
+          <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
       </SessionValidator>
     </Router>

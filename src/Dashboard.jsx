@@ -48,14 +48,36 @@ const Dashboard = () => {
 
     const [showNotifications, setShowNotifications] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
-    const [notifications] = useState([
-        { id: 1, text: "New course available: Advanced MERN", time: "2h ago", read: false, link: "/courses" },
-        { id: 2, text: "You have a new message", time: "3h ago", read: false, link: "/chat" },
-        { id: 3, text: "Mentor Arjun accepted your request", time: "5h ago", read: true, link: "/chat" },
-        { id: 4, text: "Welcome to EduConnect!", time: "1d ago", read: true, link: null },
-    ]);
+    const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
 
-    const unreadCount = notifications.filter(n => !n.read).length;
+    useEffect(() => {
+        if (user._id) fetchNotifications();
+    }, [user._id]);
+
+    const fetchNotifications = async () => {
+        try {
+            const res = await fetch(`${API_URL}/notifications/${user._id}`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setNotifications(data.notifications || []);
+                setUnreadCount(data.unreadCount || 0);
+            }
+        } catch (e) { console.error(e); }
+    };
+
+    const markAllRead = async () => {
+        try {
+            await fetch(`${API_URL}/notifications/${user._id}/read-all`, {
+                method: 'PUT',
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            setUnreadCount(0);
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        } catch (e) { console.error(e); }
+    };
 
     const menuItems = [
         { icon: Home, label: "Home", link: "/" },
@@ -78,6 +100,11 @@ const Dashboard = () => {
         { icon: Users, label: "Mentors", link: "/mentors" },
         { icon: MessageCircle, label: "Messages", link: "/chat" },
         { icon: Settings, label: "Settings", link: "/profile" },
+
+        // Admin link
+        ...(role === 'admin' ? [
+            { icon: LayoutDashboard, label: "Admin Panel", link: "/admin" }
+        ] : []),
     ];
 
     const stats = isStudent ? [
@@ -169,20 +196,28 @@ const Dashboard = () => {
 
                             {showNotifications && (
                                 <div className="absolute right-0 mt-2 w-80 bg-slate-800 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
-                                    <div className="p-3 border-b border-white/10 font-semibold text-sm flex justify-between">
+                                    <div className="p-3 border-b border-white/10 font-semibold text-sm flex justify-between items-center">
                                         <span>Notifications</span>
-                                        <span className="text-fuchsia-400">{unreadCount} new</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-fuchsia-400">{unreadCount} new</span>
+                                            {unreadCount > 0 && (
+                                                <button onClick={markAllRead} className="text-xs text-slate-400 hover:text-white">Mark all read</button>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="max-h-64 overflow-y-auto">
-                                        {notifications.map(notif => (
+                                        {notifications.length === 0 ? (
+                                            <div className="p-4 text-center text-slate-500 text-sm">No notifications yet</div>
+                                        ) : notifications.map(notif => (
                                             <Link
-                                                key={notif.id}
+                                                key={notif._id}
                                                 to={notif.link || "#"}
                                                 onClick={() => setShowNotifications(false)}
                                                 className={`block p-3 border-b border-white/5 hover:bg-white/5 transition-colors ${!notif.read ? 'bg-white/5' : ''}`}
                                             >
-                                                <p className="text-sm text-slate-200">{notif.text}</p>
-                                                <span className="text-xs text-slate-500 block mt-1">{notif.time}</span>
+                                                <p className="text-xs font-semibold text-fuchsia-400">{notif.title}</p>
+                                                <p className="text-sm text-slate-200 mt-0.5">{notif.message}</p>
+                                                <span className="text-xs text-slate-500 block mt-1">{new Date(notif.createdAt).toLocaleDateString()}</span>
                                             </Link>
                                         ))}
                                     </div>

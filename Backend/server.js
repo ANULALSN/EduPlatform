@@ -9,12 +9,16 @@ import chatRoutes from './routes/chat.routes.js';
 import courseRoutes from './routes/course.routes.js';
 import requestRoutes from './routes/request.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
+import purchaseRoutes from './routes/purchase.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
 
 const app = express();
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000', 'https://edu-platform-indol.vercel.app'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000', 'https://edu-platform-indol.vercel.app'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -32,8 +36,13 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/purchase', purchaseRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 const PORT = 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
